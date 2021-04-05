@@ -18,9 +18,9 @@
 // When disabled, the port itself is disabled, which frees up significant ram and cpu cycles on some hardware.
 // Example, on Teensy 3.5/3.6, with the usb port enabled at all, the sketch must be compiled to run the cpu at a minimum of 24mhz
 // but with the usb port disabled, the sketch can be compiled to run at the lowest possible option of only 2Mhz.
-#define DEBUG 3                 // disable unless actually debugging, usb-serial uses battery and cpu, also code waits for console at power-on.
-#define DEBUG_ACTIVITY_LIGHT 1  // enable the debug led in general
-#define DEBUG_SLEEP 0           // use DEBUG_LED to debug sleepNow()
+//#define DEBUG 3                 // disable unless actually debugging, usb-serial uses battery and cpu, also code waits for console at power-on.
+//#define DEBUG_ACTIVITY_LIGHT 1  // enable the debug led in general
+//#define DEBUG_SLEEP 0           // use DEBUG_LED to debug sleepNow()
 
 #define ENABLE_LOADER 1         // 0=disable sendLoader() and ignore DSR/DTR pins, 1=enable. 
 #define LOADER_FILE "LOADER.DO" // File that sendLoader() will try to send to the client.
