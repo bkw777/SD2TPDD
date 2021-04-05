@@ -6,6 +6,7 @@
 
 #define SKETCH_NAME __FILE__
 #define SKETCH_VERSION "0.4.2"
+// 0.4.2 20210405 bkw - fix setLabel(), configurable sendLoader() speed, replace some magic numbers
 // 0.4.1 20200913 bkw - more IDE-supplied macros to un-hardcode where possible, more debug output
 // 0.4.0 20200828 bkw - sendLoader()
 // 0.3.0 20180921 bkw - Teensy & Feather boards, CLIENT & CONSOLE, setLabel(), sleepNow()
@@ -35,6 +36,13 @@
 // File that sendLoader() will try to send to the client.
 // Comment out to disable sendLoader() & ignore DSR_PIN
 #define LOADER_FILE "LOADER.DO"
+
+// Wait this many ms between each byte in sendLoader()
+// 5 is good for most things, but rxcini.DO (REXCPM bootstrapper) needs 6
+#define LOADER_BYTE_MS 6
+
+// TS-DOS label for root dir - 6 bytes
+#define ROOT_DME_LABEL "SD:   "
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,7 +78,7 @@
 #include <SdFat.h>
 #include <sdios.h>
 #include <SdFatConfig.h>
-#include <SysCall.h>
+// #include <SysCall.h>  // used to require, now it's an error after a libraries or board support update
 
 #if defined(USE_SDIO)
 SdFatSdioEX SD;
@@ -140,8 +148,10 @@ SdFat SD;
 
 // main loop states
 #define ST_WAITING 0x00
-#define ST_PARSING 0x01 
-#define ST_WORKING 0x02 
+#define ST_PARSING 0x01
+#define ST_WORKING 0x02
+
+#define BASIC_EOF 0x1A
 
 File root;  // Root file for filesystem reference
 File entry; // Moving file entry for the emulator

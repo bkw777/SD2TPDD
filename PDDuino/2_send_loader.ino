@@ -31,15 +31,15 @@ void sendLoader() {
          c = 0;
         }
 #endif // DEBUG
-        delay(LOADER_MS_PER_BYTE);
+        delay(LOADER_BYTE_MS);
       }
     f.close();
     SD_LED_OFF
     CLIENT.flush();
-    CLIENT.write(0x1A);
+    CLIENT.write(BASIC_EOF);
 #if defined(BOARD_FEATHERM0)    // some kind of bug with M0
     delay(250);                 // need to send the 0x1A twice, and need to delay between them
-    CLIENT.write(0x1A);         // 2 in a row doesn't work, delay alone before sending 1 doesn't work
+    CLIENT.write(BASIC_EOF);    // 2 in a row doesn't work, delay alone before sending 1 doesn't work
 #endif // BOARD_FEATHERM0
     CLIENT.flush();
     CLIENT.end();

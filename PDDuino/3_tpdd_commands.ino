@@ -358,8 +358,8 @@ void command_DMEreq() {  // Send the dmeLabel
 
   DEBUG_PRINT(F("command_DMEReq(): dmeLabel[")); DEBUG_PRINT(dmeLabel); DEBUG_PRINTL(F("]"));
 
-  if(DME){  // prepend "/" to the root dir label just because my janky-ass setLabel() assumes it
-    if (directoryDepth>0x00) setLabel(directory); else setLabel("/SD:   ");
+  if(DME){
+    if (directoryDepth>0x00) setLabel(directory); else setLabel(ROOT_DME_LABEL);
     tpddWrite(RET_NORMAL);
     tpddWrite(0x0B);
     tpddWrite(0x20);

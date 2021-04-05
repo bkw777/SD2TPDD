@@ -1,7 +1,5 @@
 // expand/interpret some behavioral config options
 
-#define LOADER_MS_PER_BYTE 0x06  // ms sleep after each byte sent in sendLoader()
-
 #if !defined(DEBUG)
 #define DEBUG 0
 #endif

@@ -52,12 +52,16 @@ void setLabel(char* s) {
   DEBUG_PRINT(F("dmeLabel["));  DEBUG_PRINT(dmeLabel);  DEBUG_PRINTL(F("]"));
 
   while(s[j] == 0x00) j--;            // seek from end to non-null
-  if(s[j] == '/' && j > 0x00) j--;    // seek past trailing slash
+  if(s[j] == '/' && j > 0x00) j--;    // seek past trailing slash if any
   z = j;                              // mark end of name
-  while(s[j] != '/' && j > 0x00) j--; // seek to next slash
+  while(s[j] != '/' && j > 0x00) j--; // seek to next slash or start of string
+  if(s[j] != '/') j++;                // don't include the slash if any
 
   // copy 6 chars, up to z or null, space pad
-  for(byte i=0x00 ; i<0x06 ; i++) if(s[++j]>0x00 && j<=z) dmeLabel[i] = s[j]; else dmeLabel[i] = 0x20;
+  for(byte i=0x00 ; i<0x06 ; i++) {
+    if(s[j]>0x00 && j<=z) dmeLabel[i] = s[j]; else dmeLabel[i] = ' ';
+    j++;
+  }
   dmeLabel[0x06] = 0x00;
 
   DEBUG_PRINT(F("dmeLabel[")); DEBUG_PRINT(dmeLabel); DEBUG_PRINTL(F("]"));
