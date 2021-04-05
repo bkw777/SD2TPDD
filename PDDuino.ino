@@ -24,6 +24,9 @@
 
 #define ENABLE_LOADER 1         // 0=disable sendLoader() and ignore DSR/DTR pins, 1=enable. 
 #define LOADER_FILE "LOADER.DO" // File that sendLoader() will try to send to the client.
+#define LOADER_BYTE_MS 6        // pause in ms between each byte in sendLoader
+
+#define DME_ROOT_LABEL "SD:   " // Label for root dir in TS-DOS current dir display. 6 bytes.
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -175,12 +178,16 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
-#include <BlockDriver.h>
+
+#define BASIC_EOF 0x1A
+
+
+//#include <BlockDriver.h>
 #include <FreeStack.h>
 #include <MinimumSerial.h>
 #include <SdFat.h>
 #include <SdFatConfig.h>
-#include <SysCall.h>
+//#include <SysCall.h>
 #include <sdios.h>
 
 #if defined(USE_SDIO)
@@ -412,11 +419,11 @@ void sendLoader() {
          DEBUG_PRINT(F("."));
          c = 0;
         }
-        delay(0x05);
+        delay(LOADER_BYTE_MS);
       }
     f.close();
     SD_LED_OFF
-    CLIENT.write(0x1A);
+    CLIENT.write(BASIC_EOF);
     CLIENT.flush();
     CLIENT.end();
     DEBUG_PRINTL(F("DONE"));
@@ -481,12 +488,16 @@ void setLabel(char* s) {
   DEBUG_PRINT(F("dmeLabel["));  DEBUG_PRINT(dmeLabel);  DEBUG_PRINTL(F("]"));
 
   while(s[j] == 0x00) j--;            // seek from end to non-null
-  if(s[j] == '/' && j > 0x00) j--;    // seek past trailing slash
+  if(s[j] == '/' && j > 0x00) j--;    // seek past trailing slash, if any
   z = j;                              // mark end of name
-  while(s[j] != '/' && j > 0x00) j--; // seek to next slash
+  while(s[j] != '/' && j > 0x00) j--; // seek to next slash or start of string
+  if (s[j] == '/') j++;               // don't include the slash itself, if any
 
   // copy 6 chars, up to z or null, space pad
-  for(byte i=0x00 ; i<0x06 ; i++) if(s[++j]>0x00 && j<=z) dmeLabel[i] = s[j]; else dmeLabel[i] = 0x20;
+  for(byte i=0x00 ; i<0x06 ; i++) {
+    if(s[j]>0x00 && j<=z) dmeLabel[i] = s[j]; else dmeLabel[i] = 0x20;
+    j++;
+  }
   dmeLabel[0x06] = 0x00;
 
   DEBUG_PRINT(F("dmeLabel[")); DEBUG_PRINT(dmeLabel); DEBUG_PRINTL(F("]"));
@@ -752,9 +763,9 @@ void command_open(){  //Opens an entry for reading, writing, or appending
       }else{  //If the reference isn't a sub-directory, it's a file
         entry.close();
         switch(rMode){
-          case 0x01: entry = SD.open(directory, FILE_WRITE); break;             // Write
-          case 0x02: entry = SD.open(directory, FILE_WRITE | O_APPEND); break;  // Append
-          case 0x03: entry = SD.open(directory, FILE_READ); break;              // Read
+          case 0x01: entry = SD.open(directory, O_WRITE); break;             // Write
+          case 0x02: entry = SD.open(directory, O_WRITE | O_APPEND); break;  // Append
+          case 0x03: entry = SD.open(directory, O_READ); break;              // Read
         }
         upDirectory();
       }
@@ -811,13 +822,13 @@ void command_delete(){  //Delete the currently open entry
   SD_LED_ON
   entry.close();  //Close any open entries
   directoryAppend(refFileNameNoDir);  //Push the reference name onto the directory buffer
-  entry = SD.open(directory, FILE_READ);  //directory can be deleted if opened "READ"
+  entry = SD.open(directory, O_READ);  //directory can be deleted if opened "READ"
 
   if(DME && entry.isDirectory()){
     entry.rmdir();  //If we're in DME mode and the entry is a directory, delete it
   }else{
     entry.close();  //Files can be deleted if opened "WRITE", so it needs to be re-opened
-    entry = SD.open(directory, FILE_WRITE);
+    entry = SD.open(directory, O_WRITE);
     entry.remove();
   }
   SD_LED_OFF
@@ -899,8 +910,8 @@ void command_DMEReq() {  //Send the dmeLabel
 
   DEBUG_PRINT(F("command_DMEReq(): dmeLabel[")); DEBUG_PRINT(dmeLabel); DEBUG_PRINTL(F("]"));
 
-  if(DME){  // prepend "/" to the root dir label just because my janky-ass setLabel() assumes it
-    if (directoryDepth>0x00) setLabel(directory); else setLabel("/SD:   ");
+  if (DME) {
+    if (directoryDepth>0x00) setLabel(directory); else setLabel(DME_ROOT_LABEL);
     tpddWrite(0x12);
     tpddWrite(0x0B);
     tpddWrite(0x20);
